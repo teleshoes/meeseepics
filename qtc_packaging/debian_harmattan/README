@@ -1,0 +1,12 @@
+The Debian Package meeseepics
+----------------------------
+
+Image viewer.
+
+An image viewer that allows to navigate the filesystem and displays
+a thumbnail-gallery of the images in a directory.
+
+The image viewer follows the concepts of popular folder-based image
+viewers like Gwenview and ACDSee.
+
+ -- Sebastian Sauer <sebastian.sauer@kdab.com>  Sun, 13 May 2012 16:25:42 +0200
