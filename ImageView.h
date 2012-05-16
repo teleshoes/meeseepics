@@ -21,6 +21,7 @@ public slots:
     bool nextImage();
 
     void zoom(qreal factor);
+    void zoomToCenter(qreal factor = 1.0);
     void zoomToFit();
 
 signals:

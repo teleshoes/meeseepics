@@ -42,23 +42,14 @@ ImageView::ImageView(QDeclarativeItem *parent)
     , m_proxyModel(0)
 {
     setAcceptTouchEvents(true);
-    setAcceptedMouseButtons(/* Qt::NoButton | */ Qt::LeftButton | Qt::RightButton | Qt::MiddleButton);
-    //setKeepMouseGrab(true);
+    setAcceptedMouseButtons(Qt::LeftButton | Qt::RightButton | Qt::MiddleButton);
     setSmooth(true);
-    //setTransformOrigin(QDeclarativeItem::Center);
     setFlag(QGraphicsItem::ItemClipsToShape, true);
     setFlag(QGraphicsItem::ItemClipsChildrenToShape, true);
     setFlag(QGraphicsItem::ItemSendsGeometryChanges, true);
-    //setFlag(QGraphicsItem::ItemSendsScenePositionChanges, true);
-
     m_imageItem->setTransformationMode(Qt::SmoothTransformation);
-    m_imageItem->setFlag(QGraphicsItem::ItemIsMovable, true);
     m_imageItem->setFlag(QGraphicsItem::ItemIgnoresParentOpacity, true);
-
     connect(m_imageItem, SIGNAL(imageLoaded()), this, SLOT(imageLoaded()));
-    //m_imageItem->installSceneEventFilter(this);
-    //m_imageItem->setAcceptTouchEvents(true);
-    //m_imageItem->setAcceptedMouseButtons(/* Qt::NoButton | */ Qt::LeftButton | Qt::RightButton | Qt::MiddleButton);
 }
 
 ImageView::~ImageView()
@@ -92,7 +83,9 @@ bool ImageView::setImage(const QModelIndex &index)
     Q_ASSERT(!m_path.isEmpty());
 
     qDebug() << "ImageView::setImage path=" << m_path;
-    m_imageItem->loadImage(m_path);
+    qreal size = 0;
+    int priority = QThread::HighestPriority;
+    m_imageItem->loadImage(m_path, size, priority);
 
     return true;
 }
@@ -136,11 +129,17 @@ void ImageView::zoomToFit()
 {
     QSize size = m_imageItem->pixmap().size();
     qreal factor = qMin(width() / size.width(), height() / size.height());
-    //qreal moveX = (size.width() - width()) / 2.0;
-    //qreal moveY = (size.height() - height()) / 2.0;
-    m_totalScaleFactor = factor;
-    m_imageItem->setScale(m_totalScaleFactor);
-    //m_imageItem->setPos(-moveX, -moveY);
+    zoomToCenter(factor);
+}
+
+void ImageView::zoomToCenter(qreal factor)
+{
+    zoom(factor);
+    QRectF r = m_imageItem->mapRectToParent(m_imageItem->boundingRect());
+    QSizeF s = boundingRect().size();
+    qreal x = (s.width() - r.width()) / 2;
+    qreal y = (s.height() - r.height()) / 2;
+    m_imageItem->setPos(x, y);
 }
 
 bool ImageView::sceneEvent(QEvent *event)
@@ -152,7 +151,26 @@ bool ImageView::sceneEvent(QEvent *event)
             QTouchEvent *touchEvent = static_cast<QTouchEvent *>(event);
             QList<QTouchEvent::TouchPoint> touchPoints = touchEvent->touchPoints();
             if (touchPoints.count() == 1) {
-                qDebug()<<"aaaaaaaaaa"    ;
+                const QTouchEvent::TouchPoint &touchPoint0 = touchPoints.first();
+                qreal x = touchPoint0.pos().x() - touchPoint0.lastPos().x();
+                qreal y = touchPoint0.pos().y() - touchPoint0.lastPos().y();
+                QRectF r1 = boundingRect();
+                QRectF r2 = m_imageItem->mapRectToParent(m_imageItem->boundingRect());
+                if (r2.width() <= r1.width()) {
+                    x = 0;
+                } else if (x > 0) {
+                    x = r2.left() >= r1.left() ? 0 : qMin(x, r1.left() - r2.left());
+                } else {
+                    x = r2.right() >= r1.right() ? qMin(x, r2.right() - r1.right()) : 0;
+                }
+                if (r2.height() <= r1.height()) {
+                    y = 0;
+                } else if (y > 0) {
+                    y = r2.top() >= r1.top() ? 0 : qMin(y, r1.top() - r2.top());
+                } else {
+                    y = r2.bottom() >= r1.bottom() ? qMin(y, r2.bottom() - r1.bottom()) : 0;
+                }
+                m_imageItem->moveBy(x, y);
             } else if (touchPoints.count() == 2) {
                 const QTouchEvent::TouchPoint &touchPoint0 = touchPoints.first();
                 const QTouchEvent::TouchPoint &touchPoint1 = touchPoints.last();
@@ -161,8 +179,27 @@ bool ImageView::sceneEvent(QEvent *event)
                     m_totalScaleFactor *= scaleFactor;
                     scaleFactor = 1;
                 }
+                QRectF r1 = boundingRect();
+                QRectF r2 = m_imageItem->mapRectToParent(m_imageItem->boundingRect());
                 m_imageItem->setScale(m_totalScaleFactor * scaleFactor);
-                //m_imageItem->scroll(scaleFactor, scaleFactor);
+                QRectF r3 = m_imageItem->mapRectToParent(m_imageItem->boundingRect());
+                qreal x = (r2.width() - r3.width()) / 2;
+                qreal y = (r2.height() - r3.height()) / 2;
+                if (x > 0 && r1.width() < r3.width()) {
+                    if (r3.left() + x > r1.left()) {
+                        x = qMax<qreal>(0, r3.left() - r1.left());
+                    } else if (r3.right() + x < r1.right()) {
+                        x = qMax<qreal>(0, r1.right() - r3.right());
+                    }
+                }
+                if (y > 0 && r1.height() < r3.height()) {
+                    if (r3.top() + y > r1.top()) {
+                        y = qMax<qreal>(0, r3.top() - r1.top());
+                    } else if (r3.bottom() + y < r1.bottom()) {
+                        y = qMax<qreal>(0, r1.bottom() - r3.bottom());
+                    }
+                }
+                m_imageItem->moveBy(x, y);
             }
             return true;
         }
@@ -189,7 +226,7 @@ bool ImageView::sceneEvent(QEvent *event)
             QSize size = m_imageItem->pixmap().size();
             bool isZoomToFit = qFuzzyCompare(qMin(width() / size.width(), height() / size.height()), m_totalScaleFactor);
             if (isZoomToFit)
-                zoom(1.0);
+                zoomToCenter(m_totalScaleFactor * 2.0);
             else
                 zoomToFit();
             return true;

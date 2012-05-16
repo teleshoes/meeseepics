@@ -14,14 +14,14 @@ class ThumbnailItem : public ImageItem
 {
 public:
     explicit ThumbnailItem(FileSystemView *view, const QModelIndex &index, qreal size)
-        : ImageItem(view, size)
+        : ImageItem(view)
     {
         setTransformationMode(Qt::FastTransformation);
         setFlag(QGraphicsItem::ItemIsSelectable, true);
         //setFlag(QGraphicsItem::ItemIsFocusable, true);
 
         m_path = view->m_model->data(index, FileSystemModel::FilePathRole).toString();
-        loadImage(m_path);
+        loadImage(m_path, size);
     }
 
 protected:

@@ -30,7 +30,7 @@ class ImageItem : public QObject, public QGraphicsPixmapItem
 {
     Q_OBJECT
 public:
-    explicit ImageItem(QGraphicsItem *parent = 0, qreal size = 0);
+    explicit ImageItem(QGraphicsItem *parent = 0);
     virtual ~ImageItem();
 
     virtual QRectF boundingRect() const;
@@ -38,7 +38,7 @@ public:
     static QThreadPool* threadPool();
 
 public slots:
-    void loadImage(const QString &path);
+    void loadImage(const QString &path, qreal size = 0, int priority = 0);
     void abortLoadImage();
 
 signals:
@@ -49,7 +49,6 @@ private slots:
 
 private:
     ImageThread *m_thread;
-    qreal m_size;
 };
 
 #endif // IMAGEITEM_H

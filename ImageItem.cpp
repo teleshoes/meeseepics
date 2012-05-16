@@ -37,11 +37,10 @@ void ImageThread::run()
     emit imageLoaded(image);
 }
 
-ImageItem::ImageItem(QGraphicsItem *parent, qreal size)
+ImageItem::ImageItem(QGraphicsItem *parent)
     : QObject()
     , QGraphicsPixmapItem(parent)
     , m_thread(0)
-    , m_size(size)
 {
     setShapeMode(QGraphicsPixmapItem::BoundingRectShape);
     setTransformationMode(Qt::SmoothTransformation);
@@ -76,12 +75,11 @@ QThreadPool* ImageItem::threadPool()
 QRectF ImageItem::boundingRect() const
 {
     QRectF r = QGraphicsPixmapItem::boundingRect();
-    if (m_size > 0)
-        r.setSize(QSizeF(m_size, m_size));
+//if (m_size > 0) r.setSize(QSizeF(m_size, m_size));
     return r;
 }
 
-void ImageItem::loadImage(const QString &path)
+void ImageItem::loadImage(const QString &path, qreal size, int priority)
 {
     qDebug() << "ImageItem::loadImage path=" << path;
 
@@ -91,9 +89,9 @@ void ImageItem::loadImage(const QString &path)
         disconnect(m_thread, SIGNAL(imageLoaded(QImage)), this, SLOT(setImage(QImage)));
         m_thread->kill();
     }
-    m_thread = new ImageThread(path, m_size);
+    m_thread = new ImageThread(path, size);
     connect(m_thread, SIGNAL(imageLoaded(QImage)), this, SLOT(setImage(QImage)));
-    threadPool()->start(m_thread);
+    threadPool()->start(m_thread, priority);
 }
 
 void ImageItem::abortLoadImage()

@@ -14,10 +14,7 @@ Page {
     ImageViewItem {
         id: imageView
         anchors.fill: parent
-
-        onCloseImage: {
-            appWindow.pageStack.pop()
-        }
+        onCloseImage: appWindow.showMain()
 
         /*
         onVisibleChanged: {

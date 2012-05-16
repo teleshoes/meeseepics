@@ -15,9 +15,14 @@ PageStackWindow {
         id: imagePage
     }
 
+    function showMain(index) {
+        appWindow.pageStack.pop(mainPage, true)
+    }
+
     function showImage(index) {
-        appWindow.pageStack.push(imagePage)
         imagePage.setImage(index)
+        appWindow.pageStack.push(imagePage, {}, true)
+
     }
 
 }
