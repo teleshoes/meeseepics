@@ -91,7 +91,12 @@ void ImageItem::loadImage(const QString &path, qreal size, int priority)
     }
     m_thread = new ImageThread(path, size);
     connect(m_thread, SIGNAL(imageLoaded(QImage)), this, SLOT(setImage(QImage)));
-    threadPool()->start(m_thread, priority);
+
+    QThreadPool *tp = threadPool();
+    //bool reserved = priority >= QThread::HighPriority && priority <= QThread::TimeCriticalPriority;
+    //if (reserved) tp->reserveThread();
+    tp->start(m_thread, priority);
+    //if (reserved) tp->releaseThread();
 }
 
 void ImageItem::abortLoadImage()

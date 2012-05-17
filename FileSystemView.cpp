@@ -167,7 +167,7 @@ void FileSystemView::modelReset()
 
 void FileSystemView::modelArrange()
 {
-    qDebug()<<"FileSystemView::modelArrange imagesPerRow="<<m_imagesPerRow<<"inPortrait="<<inPortrait()<<"width="<<width()<<"height="<<height()<<"boundingRect="<<boundingRect();
+    //qDebug()<<"FileSystemView::modelArrange imagesPerRow="<<m_imagesPerRow<<"inPortrait="<<inPortrait()<<"width="<<width()<<"height="<<height()<<"boundingRect="<<boundingRect();
 
     qreal x = 0.0;
     qreal y = 0.0;
@@ -226,8 +226,12 @@ bool FileSystemView::emitShowImage(const QModelIndex &index)
 
 void FileSystemView::geometryChanged(const QRectF &newGeometry, const QRectF &oldGeometry)
 {
-    qDebug() << "FileSystemView::geometryChanged newGeometry=" << newGeometry << "oldGeometry=" << oldGeometry;
+    //qDebug() << "FileSystemView::geometryChanged newGeometry=" << newGeometry << "oldGeometry=" << oldGeometry;
     QDeclarativeItem::geometryChanged(newGeometry, oldGeometry);
+    if (newGeometry == oldGeometry || (m_lastNewGeometry == newGeometry && m_lastOldGeometry == oldGeometry))
+        return;
+    m_lastNewGeometry = newGeometry;
+    m_lastOldGeometry = oldGeometry;
     modelArrange();
 }
 

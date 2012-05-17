@@ -52,6 +52,7 @@ private:
 
     FileSystemModel *m_model;
     FileSystemProxyModel *m_proxyModel;
+    QRectF m_lastNewGeometry, m_lastOldGeometry;
     QColor m_fontColor;
     int m_fontPixelSize;
     int m_imagesPerRow;

@@ -1,8 +1,6 @@
 The Debian Package meeseepics
 ----------------------------
 
-Image viewer.
-
 An image viewer that allows to navigate the filesystem and displays
 a thumbnail-gallery of the images in a directory.
 

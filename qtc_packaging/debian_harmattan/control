@@ -1,17 +1,16 @@
 Source: meeseepics
-Section: user/other
+Section: user/graphics
 Priority: optional
 Maintainer: Sebastian Sauer <sebastian.sauer@kdab.com>
 Build-Depends: debhelper (>= 5), libqt4-dev
 Standards-Version: 3.7.3
-Homepage: <insert the upstream URL, if relevant>
+Homepage: http://code.google.com/p/meeseepics/
 
 Package: meeseepics
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}
-Description: Image viewer.
- An image viewer that allows to navigate the filesystem and displays
- a thumbnail-gallery of the images in a directory.
+Description: An image viewer that allows to navigate the filesystem
+ and displays a thumbnail-gallery of the images in a directory.
  .
  The image viewer follows the concepts of popular folder-based image
  viewers like Gwenview and ACDSee.

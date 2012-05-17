@@ -20,9 +20,8 @@ PageStackWindow {
     }
 
     function showImage(index) {
-        imagePage.setImage(index)
+        imagePage.loadImage(index)
         appWindow.pageStack.push(imagePage, {}, true)
-
     }
 
 }

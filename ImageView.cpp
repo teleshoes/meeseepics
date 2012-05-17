@@ -33,13 +33,25 @@ protected:
         }
         return QGraphicsPixmapItem::sceneEvent(event);
     }
+
+    /*
+    virtual QVariant itemChange(GraphicsItemChange change, const QVariant &value)
+    {
+        QVariant result = QGraphicsPixmapItem::itemChange(change, value);
+        qDebug() << "ImageViewItem::itemChange change=" << change << "value=" << value << "result=" << result;
+        return result;
+    }
+    */
 };
 
 ImageView::ImageView(QDeclarativeItem *parent)
     : QDeclarativeItem(parent)
     , m_imageItem(new ImageViewItem(this))
     , m_totalScaleFactor(1.0)
+    , m_zoomToFit(false)
     , m_proxyModel(0)
+    , m_borderSize(35)
+    , m_borderMousePress(NoBorder)
 {
     setAcceptTouchEvents(true);
     setAcceptedMouseButtons(Qt::LeftButton | Qt::RightButton | Qt::MiddleButton);
@@ -54,18 +66,26 @@ ImageView::ImageView(QDeclarativeItem *parent)
 
 ImageView::~ImageView()
 {
+    qDeleteAll(m_imageCache);
 }
 
 QRectF ImageView::boundingRect() const
 {
     QDeclarativeItem *p = parentItem();
-    Q_ASSERT(p);
-    if (!p)
-        return QDeclarativeItem::boundingRect();
-    return p->boundingRect();
+    return p ? p->boundingRect() : QDeclarativeItem::boundingRect();
 }
 
-bool ImageView::setImage(const QModelIndex &index)
+qreal ImageView::borderSize() const
+{
+    return m_borderSize;
+}
+
+void ImageView::setBorderSize(qreal size)
+{
+    m_borderSize = size;
+}
+
+bool ImageView::loadImage(const QModelIndex &index)
 {
     Q_ASSERT(index.isValid());
 
@@ -79,10 +99,40 @@ bool ImageView::setImage(const QModelIndex &index)
 
     QModelIndex sourceIndex = m_proxyModel->mapToSource(index);
     Q_ASSERT(sourceIndex.isValid());
+    QString oldPath = m_path;
     m_path = model->data(sourceIndex, FileSystemModel::FilePathRole).toString();
     Q_ASSERT(!m_path.isEmpty());
 
-    qDebug() << "ImageView::setImage path=" << m_path;
+    if (!oldPath.isEmpty()) {
+        QFileInfo oldFi(oldPath);
+        QFileInfo newFi(m_path);
+        if (oldFi.absolutePath() != newFi.absolutePath()) {
+            qDeleteAll(m_imageCache);
+            m_imageCache.clear();
+        } else {
+            QMap<QString, ImageCache*>::Iterator it = m_imageCache.find(oldPath);
+            ImageCache *cache = 0;
+            if (it == m_imageCache.constEnd()) {
+                if (!m_zoomToFit) {
+                    cache = new ImageCache();
+                    m_imageCache.insert(oldPath, cache);
+                }
+            } else {
+                if (m_zoomToFit) {
+                    delete it.value();
+                    m_imageCache.erase(it);
+                } else {
+                    cache = it.value();
+                }
+            }
+            if (cache) {
+                cache->m_pos = m_imageItem->pos();
+                cache->m_scale = m_imageItem->scale();
+            }
+        }
+    }
+
+    qDebug() << "ImageView::doLoadImage path=" << m_path;
     qreal size = 0;
     int priority = QThread::HighestPriority;
     m_imageItem->loadImage(m_path, size, priority);
@@ -92,7 +142,16 @@ bool ImageView::setImage(const QModelIndex &index)
 
 void ImageView::imageLoaded()
 {
-    zoomToFit();
+    QMap<QString, ImageCache*>::ConstIterator it = m_imageCache.constFind(m_path);
+    if (it == m_imageCache.constEnd()) {
+        zoomToFit();
+    } else {
+        ImageCache *cache = it.value();
+        m_imageItem->setPos(cache->m_pos);
+        m_imageItem->setScale(cache->m_scale);
+        m_totalScaleFactor = cache->m_scale;
+        m_zoomToFit = false;
+    }
 }
 
 bool ImageView::previousImage()
@@ -104,7 +163,7 @@ bool ImageView::previousImage()
     index = m_proxyModel->index(r - 1, 0, index.parent());
     if (!index.isValid())
         return false;
-    return setImage(index);
+    return loadImage(index);
 }
 
 bool ImageView::nextImage()
@@ -116,12 +175,13 @@ bool ImageView::nextImage()
     index = m_proxyModel->index(r + 1, 0, index.parent());
     if (!index.isValid())
         return false;
-    return setImage(index);
+    return loadImage(index);
 }
 
 void ImageView::zoom(qreal factor)
 {
     m_totalScaleFactor = factor;
+    m_zoomToFit = false;
     m_imageItem->setScale(m_totalScaleFactor);
 }
 
@@ -130,6 +190,7 @@ void ImageView::zoomToFit()
     QSize size = m_imageItem->pixmap().size();
     qreal factor = qMin(width() / size.width(), height() / size.height());
     zoomToCenter(factor);
+    m_zoomToFit = true;
 }
 
 void ImageView::zoomToCenter(qreal factor)
@@ -142,6 +203,19 @@ void ImageView::zoomToCenter(qreal factor)
     m_imageItem->setPos(x, y);
 }
 
+void ImageView::geometryChanged(const QRectF &newGeometry, const QRectF &oldGeometry)
+{
+    //qDebug() << "ImageView::geometryChanged newGeometry=" << newGeometry << "oldGeometry=" << oldGeometry << "rotation=" << rotation();
+    QDeclarativeItem::geometryChanged(newGeometry, oldGeometry);
+    if (newGeometry == oldGeometry || (m_lastNewGeometry == newGeometry && m_lastOldGeometry == oldGeometry))
+        return;
+    m_lastNewGeometry = newGeometry;
+    m_lastOldGeometry = oldGeometry;
+    qreal x = (newGeometry.width() - oldGeometry.width()) / 2;
+    qreal y = (newGeometry.height() - oldGeometry.height()) / 2;
+    m_imageItem->moveBy(x, y);
+}
+
 bool ImageView::sceneEvent(QEvent *event)
 {
     switch (event->type()) {
@@ -150,7 +224,7 @@ bool ImageView::sceneEvent(QEvent *event)
         case QEvent::TouchEnd: {
             QTouchEvent *touchEvent = static_cast<QTouchEvent *>(event);
             QList<QTouchEvent::TouchPoint> touchPoints = touchEvent->touchPoints();
-            if (touchPoints.count() == 1) {
+            if (touchPoints.count() == 1 /* && m_borderMousePress == NoBorder */ ) {
                 const QTouchEvent::TouchPoint &touchPoint0 = touchPoints.first();
                 qreal x = touchPoint0.pos().x() - touchPoint0.lastPos().x();
                 qreal y = touchPoint0.pos().y() - touchPoint0.lastPos().y();
@@ -200,32 +274,32 @@ bool ImageView::sceneEvent(QEvent *event)
                     }
                 }
                 m_imageItem->moveBy(x, y);
+                m_zoomToFit = false;
             }
             return true;
         }
         case QEvent::GraphicsSceneMousePress: {
             QGraphicsSceneMouseEvent *mouseEvent = static_cast<QGraphicsSceneMouseEvent*>(event);
-            qDebug()<<"ImageView::sceneEvent GraphicsSceneMousePress screenPos="<<mouseEvent->screenPos()<<"lastScreenPos="<<mouseEvent->lastScreenPos()<<"rotation="<<rotation();
+            QPointF p = mapFromScene(mouseEvent->scenePos());
+            m_borderMousePress = border(p);
             return true;
         }
         case QEvent::GraphicsSceneMouseRelease: {
             QGraphicsSceneMouseEvent *mouseEvent = static_cast<QGraphicsSceneMouseEvent*>(event);
             QPointF p = mapFromScene(mouseEvent->scenePos());
-            qreal mx = p.x();
-            qreal my = p.y();
-            if (my > boundingRect().height() - 30) {
-                emit closeImage();
-            } else if (mx < 30) {
+            Border b = border(p);
+            if (b == NoBorder || b != m_borderMousePress)
+                return false;
+            if (b == LeftBorder)
                 previousImage();
-            } else if (mx > boundingRect().width() - 30) {
+            else if (b == RightBorder)
                 nextImage();
-            }
+            else if (b == TopBorder || b == BottomBorder)
+                emit closeImage();
             return true;
         }
         case QEvent::GraphicsSceneMouseDoubleClick: {
-            QSize size = m_imageItem->pixmap().size();
-            bool isZoomToFit = qFuzzyCompare(qMin(width() / size.width(), height() / size.height()), m_totalScaleFactor);
-            if (isZoomToFit)
+            if (m_zoomToFit)
                 zoomToCenter(m_totalScaleFactor * 2.0);
             else
                 zoomToFit();
@@ -241,26 +315,7 @@ bool ImageView::sceneEvent(QEvent *event)
 QVariant ImageView::itemChange(GraphicsItemChange change, const QVariant &value)
 {
     QVariant result = QDeclarativeItem::itemChange(change, value);
-    qDebug() << "ImageView::itemChange change=" << change << "value=" << value << "result=" << result;
-
-    /*
-    switch (change) {
-        case QGraphicsItem::ItemPositionChange:
-        case QGraphicsItem::ItemPositionHasChanged:
-        case QGraphicsItem::ItemMatrixChange:
-        case QGraphicsItem::ItemTransformChange:
-        case QGraphicsItem::ItemTransformHasChanged:
-        case QGraphicsItem::ItemRotationChange:
-        case QGraphicsItem::ItemRotationHasChanged:
-        case QGraphicsItem::ItemScaleChange:
-        case QGraphicsItem::ItemScaleHasChanged:
-        case QGraphicsItem::ItemTransformOriginPointChange:
-        case QGraphicsItem::ItemTransformOriginPointHasChanged:
-        default:
-            break;
-    }
-    */
-
+    //qDebug() << "ImageView::itemChange change=" << change << "value=" << value << "result=" << result;
     return result;
 }
 
@@ -276,4 +331,17 @@ QModelIndex ImageView::pathIndex() const
     QModelIndex index = m_proxyModel->mapFromSource(sourceIndex);
     Q_ASSERT(index.isValid());
     return index;
+}
+
+ImageView::Border ImageView::border(const QPointF &pos) const
+{
+    if (pos.y() < m_borderSize)
+        return TopBorder;
+    if (pos.y() > boundingRect().height() - m_borderSize)
+        return BottomBorder;
+    if (pos.x() < m_borderSize)
+        return LeftBorder;
+    if (pos.x() > boundingRect().width() - m_borderSize)
+        return RightBorder;
+    return NoBorder;
 }

@@ -24,8 +24,8 @@ Page {
         */
     }
 
-    function setImage(index) {
-        imageView.setImage(index)
+    function loadImage(index) {
+        imageView.loadImage(index)
     }
 
 }
