@@ -212,22 +212,24 @@ void FileSystemView::modelArrange()
     qreal tw = w / m_imagesPerRow;
     int row = 0;
     int column = 0;
-    Q_FOREACH(QGraphicsItem *item, childItems()) {
-        if (!dynamic_cast<ThumbnailItem*>(item)) {
-            y += item->boundingRect().height();
-            continue;
-        }
-        item->setPos(x, y);
-        //qreal scale = thumbnailItem->boundingRect().width() / tw;
-        //thumbnailItem->setScale(scale);
-        if (column == m_imagesPerRow - 1) {
-            x = 0.0;
-            y += tw;
-            column = 0;
-            ++row;
-        } else {
-            x += tw;
-            ++column;
+    Q_FOREACH(QGraphicsItem *mainItem, childItems()) {
+        Q_FOREACH(QGraphicsItem *item, mainItem->childItems()) {
+            if (!dynamic_cast<ThumbnailItem*>(item)) {
+                y += item->boundingRect().height();
+                continue;
+            }
+            item->setPos(x, y);
+            //qreal scale = thumbnailItem->boundingRect().width() / tw;
+            //thumbnailItem->setScale(scale);
+            if (column == m_imagesPerRow - 1) {
+                x = 0.0;
+                y += tw;
+                column = 0;
+                ++row;
+            } else {
+                x += tw;
+                ++column;
+            }
         }
     }
 
