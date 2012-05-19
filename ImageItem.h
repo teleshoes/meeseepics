@@ -24,6 +24,10 @@ private:
     QString m_path;
     qreal m_size;
     QMutex m_mutex;
+
+    bool jpegExifReadWord(QIODevice &sdevice, unsigned short *target, bool invert = true);
+    bool jpegExifScanloop(QIODevice &jpegFile, unsigned int &tnOffset, unsigned int &tnLength);
+    void jpegExifReadThumbnail(QIODevice &jpegFile, QImage &image);
 };
 
 class ImageItem : public QObject, public QGraphicsPixmapItem
@@ -33,9 +37,8 @@ public:
     explicit ImageItem(QGraphicsItem *parent = 0);
     virtual ~ImageItem();
 
-    virtual QRectF boundingRect() const;
-
-    static QThreadPool* threadPool();
+    static QThreadPool* thumbnailThreadPool();
+    static QThreadPool* imageThreadPool();
 
 public slots:
     void loadImage(const QString &path, qreal size = 0, int priority = 0);
@@ -44,7 +47,7 @@ public slots:
 signals:
     void imageLoaded();
 
-private slots:
+protected slots:
     void setImage(const QImage &image);
 
 private:

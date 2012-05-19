@@ -13,8 +13,8 @@
 class ThumbnailItem : public ImageItem
 {
 public:
-    explicit ThumbnailItem(FileSystemView *view, const QModelIndex &index, qreal size)
-        : ImageItem(view)
+    explicit ThumbnailItem(FileSystemView *view, QGraphicsItem *parent, const QModelIndex &index, qreal size)
+        : ImageItem(parent)
     {
         setTransformationMode(Qt::FastTransformation);
         setFlag(QGraphicsItem::ItemIsSelectable, true);
@@ -28,7 +28,7 @@ protected:
     virtual void mouseReleaseEvent(QGraphicsSceneMouseEvent *event)
     {
         QGraphicsPixmapItem::mouseReleaseEvent(event);
-        static_cast<FileSystemView*>(parentItem())->emitShowImage(m_path);
+        static_cast<FileSystemView*>(parentItem()->parentItem())->emitShowImage(m_path);
     }
 
 private:
@@ -39,7 +39,6 @@ FileSystemView::FileSystemView(QDeclarativeItem *parent)
     : QDeclarativeItem(parent)
     , m_model(new FileSystemModel(this))
     , m_proxyModel(new FileSystemProxyModel(m_model))
-    , m_fontPixelSize(-1)
     , m_imagesPerRow(3)
 {
     QStringList filters;
@@ -55,28 +54,48 @@ FileSystemView::FileSystemView(QDeclarativeItem *parent)
     m_model->setDirectory(m_model->homePath());
 }
 
-QColor FileSystemView::fontColor() const
+QColor FileSystemView::folderNameFontColor() const
 {
-    if (m_fontColor.isValid())
-        return m_fontColor;
+    if (m_folderNameFontColor.isValid())
+        return m_folderNameFontColor;
     return QApplication::palette().color(QPalette::WindowText);
 }
 
-void FileSystemView::setFontColor(const QColor &color)
+void FileSystemView::setFolderNameFontColor(const QColor &color)
 {
-    m_fontColor = color;
+    m_folderNameFontColor = color;
 }
 
-int FileSystemView::fontPixelSize() const
+QFont FileSystemView::folderNameFont() const
 {
-    if (m_fontPixelSize >= 0)
-        return m_fontPixelSize;
-    return QApplication::font().pixelSize();
+    return m_folderNameFont;
 }
 
-void FileSystemView::setFontPixelSize(int size)
+void FileSystemView::setFolderNameFont(const QFont &font)
 {
-    m_fontPixelSize = size;
+    m_folderNameFont = font;
+}
+
+QColor FileSystemView::folderDetailsFontColor() const
+{
+    if (m_folderDetailsFontColor.isValid())
+        return m_folderDetailsFontColor;
+    return QApplication::palette().color(QPalette::WindowText);
+}
+
+void FileSystemView::setFolderDetailsFontColor(const QColor &color)
+{
+    m_folderDetailsFontColor = color;
+}
+
+QFont FileSystemView::folderDetailsFont() const
+{
+    return m_folderDetailsFont;
+}
+
+void FileSystemView::setFolderDetailsFont(const QFont &font)
+{
+    m_folderDetailsFont = font;
 }
 
 int FileSystemView::imagesPerRow() const
@@ -95,12 +114,22 @@ void FileSystemView::setImagesPerRow(int number)
 
 int FileSystemView::thumbnailThreadCount() const
 {
-    return ImageItem::threadPool()->maxThreadCount();
+    return ImageItem::thumbnailThreadPool()->maxThreadCount();
 }
 
 void FileSystemView::setThumbnailThreadCount(int count)
 {
-    ImageItem::threadPool()->setMaxThreadCount(count);
+    ImageItem::thumbnailThreadPool()->setMaxThreadCount(count);
+}
+
+int FileSystemView::imageThreadCount() const
+{
+    return ImageItem::imageThreadPool()->maxThreadCount();
+}
+
+void FileSystemView::setImageThreadCount(int count)
+{
+    ImageItem::imageThreadPool()->setMaxThreadCount(count);
 }
 
 bool FileSystemView::inPortrait() const
@@ -110,30 +139,36 @@ bool FileSystemView::inPortrait() const
 
 void FileSystemView::modelReset()
 {
-    qDeleteAll(childItems());
-    childItems().clear();
+    QList<QGraphicsItem *> oldItems = childItems();
+    Q_FOREACH(QGraphicsItem *oldItem, oldItems)
+        oldItem->hide();
+    //childItems().clear();
+
     QModelIndex directoryIndex = m_proxyModel->mapFromSource(m_model->directoryIndex());
-    if (!directoryIndex.isValid())
+    if (!directoryIndex.isValid()) {
+        qDeleteAll(oldItems);
         return;
+    }
+
+    QGraphicsItem *mainItem = new QGraphicsRectItem(this);
 
     qreal x = 0.0;
     qreal y = 0.0;
     qreal w = width();
     qreal tw = w / m_imagesPerRow;
 
-    QModelIndex parentDirectoryIndex = m_proxyModel->parent(directoryIndex);
-    if (parentDirectoryIndex.isValid()) {
-        QModelIndex index = m_proxyModel->mapToSource(parentDirectoryIndex);
-        Q_ASSERT(index.isValid());
-        DirectoryItem *item = new DirectoryItem(this, index, QLatin1String(".."));
-        y += item->boundingRect().height();
-    }
-
     int count = m_proxyModel->rowCount(directoryIndex);
     int row = 0;
     int column = 0;
 
-    qDebug()<<"FileSystemView::modelReset count="<<count;
+    QModelIndex parentDirectoryIndex = m_proxyModel->parent(directoryIndex);
+    if (parentDirectoryIndex.isValid()) {
+        QModelIndex index = m_proxyModel->mapToSource(parentDirectoryIndex);
+        Q_ASSERT(index.isValid());
+        DirectoryItem *item = new DirectoryItem(this, mainItem, index, QLatin1String(".."));
+        y += item->boundingRect().height();
+    }
+
     for(int i = 0; i < count; ++i) {
         QModelIndex index = m_proxyModel->mapToSource(m_proxyModel->index(i, 0, directoryIndex));
         Q_ASSERT(index.isValid());
@@ -143,12 +178,12 @@ void FileSystemView::modelReset()
 
         if (isDir) {
             QString name = m_model->data(index, FileSystemModel::FileNameRole).toString();
-            DirectoryItem *item = new DirectoryItem(this, index, name);
+            DirectoryItem *item = new DirectoryItem(this, mainItem, index, name);
             item->setPos(x, y);
             y += item->boundingRect().height();
             x = 0.0;
         } else {
-            ThumbnailItem *item = new ThumbnailItem(this, index, tw);
+            ThumbnailItem *item = new ThumbnailItem(this, mainItem, index, tw);
             item->setPos(x, y);
             if (column == m_imagesPerRow - 1) {
                 x = 0.0;
@@ -163,6 +198,8 @@ void FileSystemView::modelReset()
     }
 
     setImplicitHeight(y + (column == 0 ? 0 : tw));
+
+    qDeleteAll(oldItems);
 }
 
 void FileSystemView::modelArrange()

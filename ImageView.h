@@ -25,6 +25,12 @@ public slots:
     bool previousImage();
     bool nextImage();
 
+    QPointF pos() const;
+    void setPos(const QPointF &position);
+
+    qreal zoom() const;
+    bool isZoomToFit() const;
+
     void zoom(qreal factor);
     void zoomToCenter(qreal factor = 1.0);
     void zoomToFit();
@@ -45,7 +51,6 @@ private:
 
     ImageViewItem *m_imageItem;
     qreal m_totalScaleFactor;
-    bool m_zoomToFit;
     FileSystemProxyModel *m_proxyModel;
     QRectF m_lastNewGeometry, m_lastOldGeometry;
     QString m_path;

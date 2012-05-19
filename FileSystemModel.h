@@ -22,6 +22,7 @@ public:
         FileIconRole,
         FileSizeRole,
         FileTypeRole,
+        FileModifiedRole,
         FileIsDirRole,
         FileIsSelectedRole,
         FileIsCurrentRole,

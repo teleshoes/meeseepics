@@ -14,25 +14,40 @@ class ThumbnailItem;
 class FileSystemView : public QDeclarativeItem
 {
     Q_OBJECT
-    Q_PROPERTY(QColor fontColor READ fontColor WRITE setFontColor)
-    Q_PROPERTY(int fontPixelSize READ fontPixelSize WRITE setFontPixelSize)
+
+    Q_PROPERTY(QColor folderNameFontColor READ folderNameFontColor WRITE setFolderNameFontColor)
+    Q_PROPERTY(QFont folderNameFont READ folderNameFont WRITE setFolderNameFont)
+
+    Q_PROPERTY(QColor folderDetailsFontColor READ folderDetailsFontColor WRITE setFolderDetailsFontColor)
+    Q_PROPERTY(QFont folderDetailsFont READ folderDetailsFont WRITE setFolderDetailsFont)
+
     Q_PROPERTY(int imagesPerRow READ imagesPerRow WRITE setImagesPerRow)
     Q_PROPERTY(int thumbnailThreadCount READ thumbnailThreadCount WRITE setThumbnailThreadCount)
+    Q_PROPERTY(int imageThreadCount READ imageThreadCount WRITE setImageThreadCount)
 
 public:
     explicit FileSystemView(QDeclarativeItem *parent = 0);
 
-    QColor fontColor() const;
-    void setFontColor(const QColor &color);
+    QColor folderNameFontColor() const;
+    void setFolderNameFontColor(const QColor &color);
 
-    int fontPixelSize() const;
-    void setFontPixelSize(int size);
+    QFont folderNameFont() const;
+    void setFolderNameFont(const QFont &font);
+
+    QColor folderDetailsFontColor() const;
+    void setFolderDetailsFontColor(const QColor &color);
+
+    QFont folderDetailsFont() const;
+    void setFolderDetailsFont(const QFont &font);
 
     int imagesPerRow() const;
     void setImagesPerRow(int number);
 
     int thumbnailThreadCount() const;
     void setThumbnailThreadCount(int count);
+
+    int imageThreadCount() const;
+    void setImageThreadCount(int count);
 
 signals:
     void showImage(const QModelIndex &index);
@@ -53,8 +68,8 @@ private:
     FileSystemModel *m_model;
     FileSystemProxyModel *m_proxyModel;
     QRectF m_lastNewGeometry, m_lastOldGeometry;
-    QColor m_fontColor;
-    int m_fontPixelSize;
+    QColor m_folderNameFontColor, m_folderDetailsFontColor;
+    QFont m_folderNameFont, m_folderDetailsFont;
     int m_imagesPerRow;
 
     bool inPortrait() const;

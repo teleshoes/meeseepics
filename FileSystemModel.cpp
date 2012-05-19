@@ -6,6 +6,7 @@
 #include <QFileInfo>
 #include <QDir>
 #include <QItemSelectionModel>
+#include <QDateTime>
 #include <QDebug>
 
 inline QString formatSize(qint64 rsz)
@@ -34,6 +35,7 @@ FileSystemModel::FileSystemModel(QObject *parent)
     : QFileSystemModel(parent)
 {
     setFilter(QDir::AllDirs | QDir::Files | QDir::NoDotAndDotDot);
+    //setFilter(QDir::AllDirs | QDir::Files | QDir::Hidden | QDir::NoDotAndDotDot);
 
     QHash<int, QByteArray> roles;
     roles[FileNameRole] = "fileName";
@@ -41,6 +43,7 @@ FileSystemModel::FileSystemModel(QObject *parent)
     roles[FileIconRole] = "fileIcon";
     roles[FileSizeRole] = "fileSize";
     roles[FileTypeRole] = "fileType";
+    roles[FileModifiedRole] = "fileModified";
     roles[FileIsDirRole] = "fileIsDirectory";
     roles[FileIsSelectedRole] = "fileIsSelected";
     roles[FileIsCurrentRole] = "fileIsCurrent";
@@ -139,6 +142,8 @@ QVariant FileSystemModel::data(const QModelIndex &index, int role) const
             return isDir(index) ? QString() : formatSize(size(index));
         case FileTypeRole:
             return type(index);
+        case FileModifiedRole:
+            return lastModified(index);
         case FileIsDirRole:
             return isDir(index);
         case FileIsSelectedRole:

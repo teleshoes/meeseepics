@@ -6,7 +6,13 @@ Page {
     anchors.fill: parent
 
     Label {
-        id: dummyLabel
+        id: dummyNameLabel
+        visible: false
+        font.bold: true
+    }
+
+    Label {
+        id: dummyDetailsLabel
         visible: false
     }
 
@@ -24,8 +30,10 @@ Page {
             id: fileSystemViewItem
             width: flickable.width
             height: Math.max(flickable.height, implicitHeight)
-            fontColor: '#ffffff'
-            fontPixelSize: dummyLabel.font.pixelSize
+            folderNameFontColor: '#ffffff'
+            folderNameFont: dummyNameLabel.font
+            folderDetailsFontColor: '#c0c0c0'
+            folderDetailsFont: dummyDetailsLabel.font
             imagesPerRow: appWindow.inPortrait ? 4 : 7
             anchors {
                 top: parent.top

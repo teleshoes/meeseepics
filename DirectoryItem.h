@@ -10,7 +10,7 @@ class FileSystemView;
 class DirectoryItem : public QGraphicsItemGroup
 {
 public:
-    DirectoryItem(FileSystemView *view, const QModelIndex &index, const QString &name);
+    DirectoryItem(FileSystemView *view, QGraphicsItem *parent, const QModelIndex &index, const QString &name);
     virtual QRectF boundingRect() const;
 
 protected:

@@ -48,7 +48,6 @@ ImageView::ImageView(QDeclarativeItem *parent)
     : QDeclarativeItem(parent)
     , m_imageItem(new ImageViewItem(this))
     , m_totalScaleFactor(1.0)
-    , m_zoomToFit(false)
     , m_proxyModel(0)
     , m_borderSize(35)
     , m_borderMousePress(NoBorder)
@@ -113,12 +112,12 @@ bool ImageView::loadImage(const QModelIndex &index)
             QMap<QString, ImageCache*>::Iterator it = m_imageCache.find(oldPath);
             ImageCache *cache = 0;
             if (it == m_imageCache.constEnd()) {
-                if (!m_zoomToFit) {
+                if (!isZoomToFit()) {
                     cache = new ImageCache();
                     m_imageCache.insert(oldPath, cache);
                 }
             } else {
-                if (m_zoomToFit) {
+                if (isZoomToFit()) {
                     delete it.value();
                     m_imageCache.erase(it);
                 } else {
@@ -150,7 +149,6 @@ void ImageView::imageLoaded()
         m_imageItem->setPos(cache->m_pos);
         m_imageItem->setScale(cache->m_scale);
         m_totalScaleFactor = cache->m_scale;
-        m_zoomToFit = false;
     }
 }
 
@@ -178,10 +176,30 @@ bool ImageView::nextImage()
     return loadImage(index);
 }
 
+qreal ImageView::zoom() const
+{
+    return m_totalScaleFactor;
+}
+
+bool ImageView::isZoomToFit() const
+{
+    QSize size = m_imageItem->pixmap().size();
+    return qFuzzyCompare(qMin(width() / size.width(), height() / size.height()), m_totalScaleFactor);
+}
+
+QPointF ImageView::pos() const
+{
+    return m_imageItem->pos();
+}
+
+void ImageView::setPos(const QPointF &position)
+{
+    m_imageItem->setPos(position.x(), position.y());
+}
+
 void ImageView::zoom(qreal factor)
 {
     m_totalScaleFactor = factor;
-    m_zoomToFit = false;
     m_imageItem->setScale(m_totalScaleFactor);
 }
 
@@ -190,7 +208,6 @@ void ImageView::zoomToFit()
     QSize size = m_imageItem->pixmap().size();
     qreal factor = qMin(width() / size.width(), height() / size.height());
     zoomToCenter(factor);
-    m_zoomToFit = true;
 }
 
 void ImageView::zoomToCenter(qreal factor)
@@ -274,7 +291,6 @@ bool ImageView::sceneEvent(QEvent *event)
                     }
                 }
                 m_imageItem->moveBy(x, y);
-                m_zoomToFit = false;
             }
             return true;
         }
@@ -299,7 +315,7 @@ bool ImageView::sceneEvent(QEvent *event)
             return true;
         }
         case QEvent::GraphicsSceneMouseDoubleClick: {
-            if (m_zoomToFit)
+            if (isZoomToFit())
                 zoomToCenter(m_totalScaleFactor * 2.0);
             else
                 zoomToFit();
