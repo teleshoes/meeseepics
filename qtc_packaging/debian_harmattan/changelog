@@ -2,7 +2,7 @@ meeseepics (1.0.3) unstable; urgency=low
 
   * Fix cases where switching between zoom-to-fit and double-zoom did not work as expected.
   * Improve directory items so it's more easy to click them.
-  * Improve feedback on changing directories.
+  * Optimize changing directories.
   * Optimize load thumbnail from ~/.thumbnails/grid/md5(pathQUrl).jpeg when exists.
   * Optimize load thumbnail from exif if an image embeds a thumbnail in it's exif.
   * Optimize image vs thumbnail loading by using different threadPool's for them.

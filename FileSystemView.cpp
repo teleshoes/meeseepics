@@ -132,21 +132,21 @@ void FileSystemView::setImageThreadCount(int count)
     ImageItem::imageThreadPool()->setMaxThreadCount(count);
 }
 
-bool FileSystemView::inPortrait() const
+void FileSystemView::setDirectory(const QString &path)
 {
-    return height() > width();
+    m_model->setDirectory(path);
 }
 
 void FileSystemView::modelReset()
 {
-    QList<QGraphicsItem *> oldItems = childItems();
-    Q_FOREACH(QGraphicsItem *oldItem, oldItems)
-        oldItem->hide();
-    //childItems().clear();
+    qDeleteAll(childItems());
 
     QModelIndex directoryIndex = m_proxyModel->mapFromSource(m_model->directoryIndex());
     if (!directoryIndex.isValid()) {
-        qDeleteAll(oldItems);
+        return;
+    }
+
+    if (directoryIndex != m_proxyModel->mapFromSource(m_model->index(m_model->directory()))) {
         return;
     }
 
@@ -198,8 +198,6 @@ void FileSystemView::modelReset()
     }
 
     setImplicitHeight(y + (column == 0 ? 0 : tw));
-
-    qDeleteAll(oldItems);
 }
 
 void FileSystemView::modelArrange()

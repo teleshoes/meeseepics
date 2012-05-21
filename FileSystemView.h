@@ -49,6 +49,9 @@ public:
     int imageThreadCount() const;
     void setImageThreadCount(int count);
 
+public slots:
+    void setDirectory(const QString &path);
+
 signals:
     void showImage(const QModelIndex &index);
     void directoryLoaded(const QString &path);
@@ -77,8 +80,6 @@ private:
     QColor m_folderNameFontColor, m_folderDetailsFontColor;
     QFont m_folderNameFont, m_folderDetailsFont;
     int m_imagesPerRow;
-
-    bool inPortrait() const;
 };
 
 #endif // FILESYSTEMVIEW_H
