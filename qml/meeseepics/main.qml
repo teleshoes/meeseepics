@@ -3,12 +3,12 @@ import com.nokia.meego 1.0
 
 PageStackWindow {
     id: appWindow
-    initialPage: mainPage
+    initialPage: fileSystemPage
     showToolBar: false
     showStatusBar: false
 
-    MainPage {
-        id: mainPage
+    FileSystemPage {
+        id: fileSystemPage
     }
 
     ImagePage {
@@ -16,7 +16,7 @@ PageStackWindow {
     }
 
     function showMain(index) {
-        appWindow.pageStack.pop(mainPage, true)
+        appWindow.pageStack.pop(fileSystemPage, true)
     }
 
     function showImage(index) {

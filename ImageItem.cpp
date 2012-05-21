@@ -241,7 +241,7 @@ QThreadPool* ImageItem::imageThreadPool()
 
 void ImageItem::loadImage(const QString &path, qreal size, int priority)
 {
-    qDebug() << "ImageItem::loadImage path=" << path;
+    //qDebug() << "ImageItem::loadImage path=" << path;
 
     //setPixmap(QPixmap());
 
@@ -268,7 +268,7 @@ void ImageItem::abortLoadImage()
 
 void ImageItem::setImage(const QImage &image)
 {
-    qDebug() << "ImageItem::setImage imageIsNull=" << image.isNull() << "imageRect=" << image.rect();
+    //qDebug() << "ImageItem::setImage imageIsNull=" << image.isNull() << "imageRect=" << image.rect();
 
     if (m_thread) {
         delete m_thread;

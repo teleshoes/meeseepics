@@ -51,12 +51,18 @@ public:
 
 signals:
     void showImage(const QModelIndex &index);
+    void directoryLoaded(const QString &path);
+    void rootPathChanged(const QString &path);
 
 private slots:
     void modelReset();
     void modelArrange();
+
     bool emitShowImage(const QString &path);
     bool emitShowImage(const QModelIndex &index);
+
+    void slotDirectoryLoaded(const QString &path);
+    void slotRootPathChanged(const QString &path);
 
 protected:
     virtual void geometryChanged(const QRectF &newGeometry, const QRectF &oldGeometry);

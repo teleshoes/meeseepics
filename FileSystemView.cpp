@@ -48,8 +48,8 @@ FileSystemView::FileSystemView(QDeclarativeItem *parent)
     m_model->setNameFilterDisables(false);
     //m_model->setFilter(QDir::Files | QDir::NoDotAndDotDot);
 
-    connect(m_model, SIGNAL(directoryLoaded(QString)), this, SLOT(modelReset()));
-    connect(m_model, SIGNAL(rootPathChanged(QString)), this, SLOT(modelReset()));
+    connect(m_model, SIGNAL(directoryLoaded(QString)), this, SLOT(slotDirectoryLoaded(QString)));
+    connect(m_model, SIGNAL(rootPathChanged(QString)), this, SLOT(slotRootPathChanged(QString)));
 
     m_model->setDirectory(m_model->homePath());
 }
@@ -261,6 +261,18 @@ bool FileSystemView::emitShowImage(const QModelIndex &index)
     Q_ASSERT(idx.isValid());
     emit showImage(idx);
     return true;
+}
+
+void FileSystemView::slotDirectoryLoaded(const QString &path)
+{
+    modelReset();
+    emit directoryLoaded(path);
+}
+
+void FileSystemView::slotRootPathChanged(const QString &path)
+{
+    modelReset();
+    emit rootPathChanged(path);
 }
 
 void FileSystemView::geometryChanged(const QRectF &newGeometry, const QRectF &oldGeometry)

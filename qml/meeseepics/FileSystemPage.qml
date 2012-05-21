@@ -22,10 +22,21 @@ Page {
         color: '#000000'
     }
 
+    CaptionItem {
+        id: captionItem
+    }
+
     Flickable {
         id: flickable
-        anchors.fill: parent
+        anchors {
+            top: captionItem.bottom
+            bottom: parent.bottom
+            left: parent.left
+            right: parent.right
+        }
         contentHeight: fileSystemViewItem.implicitHeight
+        clip: true
+
         FileSystemViewItem {
             id: fileSystemViewItem
             width: flickable.width
@@ -42,6 +53,12 @@ Page {
             }
             onShowImage: {
                 appWindow.showImage(index)
+            }
+            onRootPathChanged: {
+                captionItem.captionText = path
+            }
+            onDirectoryLoaded: {
+                captionItem.captionText = path
             }
         }
     }
