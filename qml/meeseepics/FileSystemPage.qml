@@ -22,32 +22,32 @@ Page {
         color: '#000000'
     }
 
-    CaptionItem {
-        id: captionItem
-    }
-
     Flickable {
         id: flickable
         anchors {
-            top: captionItem.bottom
+            top: parent.top
             bottom: parent.bottom
             left: parent.left
             right: parent.right
         }
-        contentHeight: fileSystemViewItem.implicitHeight
+        contentHeight: captionItem.height + fileSystemViewItem.implicitHeight
         clip: true
+
+        CaptionItem {
+            id: captionItem
+        }
 
         FileSystemViewItem {
             id: fileSystemViewItem
             width: flickable.width
-            height: Math.max(flickable.height, implicitHeight)
+            height: Math.max(flickable.height - captionItem.height, implicitHeight)
             folderNameFontColor: '#ffffff'
             folderNameFont: dummyNameLabel.font
             folderDetailsFontColor: '#c0c0c0'
             folderDetailsFont: dummyDetailsLabel.font
             imagesPerRow: appWindow.inPortrait ? 4 : 7
             anchors {
-                top: parent.top
+                top: captionItem.bottom
                 left: parent.left
                 right: parent.right
             }

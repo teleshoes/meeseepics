@@ -49,6 +49,8 @@ public:
     int imageThreadCount() const;
     void setImageThreadCount(int count);
 
+    virtual void componentComplete();
+
 public slots:
     void setDirectory(const QString &path);
 

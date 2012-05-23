@@ -171,7 +171,7 @@ QModelIndex FileSystemModel::directoryIndex(const QString &path) const
 {
     QModelIndex idx = path.isEmpty() ? QModelIndex(m_rootIndex) : index(path);
     if (!idx.isValid()) {
-        qWarning() << "FileSystemModel::directoryIndex Invalid source QModelIndex for directory=" << (path.isEmpty() ? rootPath() : path);
+        qWarning() << "FileSystemModel::directoryIndex Invalid source QModelIndex for path=" << path << "in rootPath=" << rootPath();
         return QModelIndex();
     }
     return idx;

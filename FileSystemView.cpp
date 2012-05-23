@@ -50,8 +50,36 @@ FileSystemView::FileSystemView(QDeclarativeItem *parent)
 
     connect(m_model, SIGNAL(directoryLoaded(QString)), this, SLOT(slotDirectoryLoaded(QString)));
     connect(m_model, SIGNAL(rootPathChanged(QString)), this, SLOT(slotRootPathChanged(QString)));
+}
 
-    m_model->setDirectory(m_model->homePath());
+void FileSystemView::componentComplete()
+{
+    QDeclarativeItem::componentComplete();
+
+    QString dir = m_model->homePath();
+    QString file;
+    if (QApplication::arguments().count() >= 2) {
+        for(int i = 1; i < QApplication::arguments().count(); ++i) {
+            QString arg = QApplication::arguments().at(i);
+            QFileInfo fi(arg);
+            if (fi.exists()) {
+                dir = fi.absolutePath();
+                file = fi.absoluteFilePath();
+                break;
+            } else {
+                QDir d(arg);
+                if (d.exists()) {
+                    dir = d.absolutePath();
+                    break;
+                }
+            }
+        }
+    }
+
+    m_model->setDirectory(dir);
+    if (file.isEmpty()) {
+        emitShowImage(file);
+    }
 }
 
 QColor FileSystemView::folderNameFontColor() const
@@ -283,4 +311,3 @@ void FileSystemView::geometryChanged(const QRectF &newGeometry, const QRectF &ol
     m_lastOldGeometry = oldGeometry;
     modelArrange();
 }
-

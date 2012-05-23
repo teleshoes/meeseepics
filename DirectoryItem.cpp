@@ -22,7 +22,7 @@ DirectoryItem::DirectoryItem(FileSystemView *view, QGraphicsItem *parent, const 
 
     QGraphicsTextItem *detailsText = new QGraphicsTextItem(modified, this);
     detailsText->setDefaultTextColor(view->folderDetailsFontColor());
-    detailsText->setPos(nameText->pos().x(), nameText->boundingRect().bottom());
+    detailsText->setPos(nameText->pos().x(), nameText->boundingRect().bottom() - 8);
     detailsText->setFont(view->folderDetailsFont());
     addToGroup(detailsText);
 }
@@ -30,7 +30,7 @@ DirectoryItem::DirectoryItem(FileSystemView *view, QGraphicsItem *parent, const 
 QRectF DirectoryItem::boundingRect() const
 {
     QRectF r = QGraphicsItemGroup::boundingRect();
-    r.setHeight(r.height() + 6);
+    //r.setHeight(r.height() + 2);
     FileSystemView *view = static_cast<FileSystemView*>(parentItem()->parentItem());
     r.setWidth(view->width());
     return r;

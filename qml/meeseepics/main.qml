@@ -3,9 +3,9 @@ import com.nokia.meego 1.0
 
 PageStackWindow {
     id: appWindow
-    initialPage: fileSystemPage
     showToolBar: false
     showStatusBar: false
+    initialPage: pageStack.currentPage === null || pageStack.currentPage === undefined ? fileSystemPage : undefined
 
     FileSystemPage {
         id: fileSystemPage
@@ -15,13 +15,13 @@ PageStackWindow {
         id: imagePage
     }
 
-    function showMain(index) {
-        appWindow.pageStack.pop(fileSystemPage, true)
+    function showMain() {
+        //appWindow.pageStack.pop(fileSystemPage, true)
+        appWindow.pageStack.push(fileSystemPage, {}, true)
     }
 
     function showImage(index) {
         imagePage.loadImage(index)
         appWindow.pageStack.push(imagePage, {}, true)
     }
-
 }

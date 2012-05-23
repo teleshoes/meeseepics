@@ -9,7 +9,7 @@ Rectangle {
         right: parent.right
     }
     height: captionColumn.height
-    color: '#212121'
+    color: '#000033'
 
     property string captionText: ''
 
@@ -32,7 +32,7 @@ Rectangle {
                 //width: parent.width - toolsButton.width
                 //height: toolsButton.height
                 anchors.verticalCenter: parent.verticalCenter
-                color: '#ffffff'
+                color: '#ccccff'
                 font.weight: Font.Normal
                 elide: Text.ElideLeft
                 verticalAlignment: Text.AlignVCenter

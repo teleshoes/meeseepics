@@ -103,6 +103,13 @@ void ImageThread::run()
         }
         */
 
+        int w = image.width();
+        int h = image.height();
+        if (w > h) {
+            image = image.copy((w - h) / 2, 0, h, h);
+        } else if (w < h) {
+            image = image.copy(0, (h - w) / 2, w, w);
+        }
         image = image.scaled(QSize(m_size, m_size), Qt::IgnoreAspectRatio, Qt::FastTransformation);
     }
     if (m_size < 0)
