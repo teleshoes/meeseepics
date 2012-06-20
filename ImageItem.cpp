@@ -278,7 +278,8 @@ void ImageItem::setImage(const QImage &image)
     //qDebug() << "ImageItem::setImage imageIsNull=" << image.isNull() << "imageRect=" << image.rect();
 
     if (m_thread) {
-        delete m_thread;
+        m_thread->kill();
+        m_thread->deleteLater();
         m_thread = 0;
     }
 

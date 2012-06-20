@@ -21,6 +21,8 @@ public:
     void setBorderSize(qreal size);
 
 public slots:
+    void setModel(FileSystemProxyModel *proxyModel);
+
     bool loadImage(const QModelIndex &index);
     bool previousImage();
     bool nextImage();
@@ -35,11 +37,15 @@ public slots:
     void zoomToCenter(qreal factor = 1.0);
     void zoomToFit();
 
+    void startSlideShow(bool random, bool loop, int interval);
+    void stopSlideShow();
+
 signals:
     void closeImage();
 
 private slots:
     void imageLoaded();
+    void slideShowTimeout();
 
 protected:
     virtual bool sceneEvent(QEvent *event);
@@ -55,6 +61,9 @@ private:
     QRectF m_lastNewGeometry, m_lastOldGeometry;
     QString m_path;
     qreal m_borderSize;
+
+    class SlideShow;
+    SlideShow *m_slideShow;
 
     struct ImageCache {
         QPointF m_pos;

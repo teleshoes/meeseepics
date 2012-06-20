@@ -65,6 +65,7 @@ private:
     QItemSelectionModel *m_selectionModel;
 };
 
-Q_DECLARE_METATYPE( QModelIndex )
+Q_DECLARE_METATYPE(QModelIndex)
+Q_DECLARE_METATYPE(FileSystemModel*)
 
 #endif // FILESYSTEMMODEL_H

@@ -34,6 +34,8 @@ inline QString formatSize(qint64 rsz)
 FileSystemModel::FileSystemModel(QObject *parent)
     : QFileSystemModel(parent)
 {
+    qRegisterMetaType<FileSystemModel*>("FileSystemModel");
+
     setFilter(QDir::AllDirs | QDir::Files | QDir::NoDotAndDotDot);
     //setFilter(QDir::AllDirs | QDir::Files | QDir::Hidden | QDir::NoDotAndDotDot);
 

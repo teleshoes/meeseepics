@@ -2,7 +2,7 @@
 #include "FileSystemModel.h"
 #include "FileSystemProxyModel.h"
 #include "DirectoryItem.h"
-#include "ImageItem.h"
+#include "ThumbnailItem.h"
 
 #include <QGraphicsItemGroup>
 #include <QGraphicsTextItem>
@@ -10,36 +10,12 @@
 #include <QImageReader>
 #include <QApplication>
 
-class ThumbnailItem : public ImageItem
-{
-public:
-    explicit ThumbnailItem(FileSystemView *view, QGraphicsItem *parent, const QModelIndex &index, qreal size)
-        : ImageItem(parent)
-    {
-        setTransformationMode(Qt::FastTransformation);
-        setFlag(QGraphicsItem::ItemIsSelectable, true);
-        //setFlag(QGraphicsItem::ItemIsFocusable, true);
-
-        m_path = view->m_model->data(index, FileSystemModel::FilePathRole).toString();
-        loadImage(m_path, size);
-    }
-
-protected:
-    virtual void mouseReleaseEvent(QGraphicsSceneMouseEvent *event)
-    {
-        QGraphicsPixmapItem::mouseReleaseEvent(event);
-        static_cast<FileSystemView*>(parentItem()->parentItem())->emitShowImage(m_path);
-    }
-
-private:
-    QString m_path;
-};
-
 FileSystemView::FileSystemView(QDeclarativeItem *parent)
     : QDeclarativeItem(parent)
     , m_model(new FileSystemModel(this))
     , m_proxyModel(new FileSystemProxyModel(m_model))
     , m_imagesPerRow(3)
+    , m_detailedFileList(false)
 {
     QStringList filters;
     Q_FOREACH(const QByteArray &format, QImageReader::supportedImageFormats())
@@ -77,7 +53,7 @@ void FileSystemView::componentComplete()
     }
 
     m_model->setDirectory(dir);
-    if (file.isEmpty()) {
+    if (!file.isEmpty()) {
         emitShowImage(file);
     }
 }
@@ -91,7 +67,9 @@ QColor FileSystemView::folderNameFontColor() const
 
 void FileSystemView::setFolderNameFontColor(const QColor &color)
 {
+    qDebug()<<"FileSystemView::setFolderNameFontColor color="<<color<<"isValid="<<color.isValid();
     m_folderNameFontColor = color;
+    modelArrange();
 }
 
 QFont FileSystemView::folderNameFont() const
@@ -102,6 +80,7 @@ QFont FileSystemView::folderNameFont() const
 void FileSystemView::setFolderNameFont(const QFont &font)
 {
     m_folderNameFont = font;
+    //modelArrange();
 }
 
 QColor FileSystemView::folderDetailsFontColor() const
@@ -114,6 +93,7 @@ QColor FileSystemView::folderDetailsFontColor() const
 void FileSystemView::setFolderDetailsFontColor(const QColor &color)
 {
     m_folderDetailsFontColor = color;
+    modelArrange();
 }
 
 QFont FileSystemView::folderDetailsFont() const
@@ -124,6 +104,7 @@ QFont FileSystemView::folderDetailsFont() const
 void FileSystemView::setFolderDetailsFont(const QFont &font)
 {
     m_folderDetailsFont = font;
+    //modelArrange();
 }
 
 int FileSystemView::imagesPerRow() const
@@ -158,6 +139,17 @@ int FileSystemView::imageThreadCount() const
 void FileSystemView::setImageThreadCount(int count)
 {
     ImageItem::imageThreadPool()->setMaxThreadCount(count);
+}
+
+bool FileSystemView::detailedFileList() const
+{
+    return m_detailedFileList;
+}
+
+void FileSystemView::setDetailedFileList(bool enabled)
+{
+    m_detailedFileList = enabled;
+    modelArrange();
 }
 
 void FileSystemView::setDirectory(const QString &path)
@@ -213,15 +205,8 @@ void FileSystemView::modelReset()
         } else {
             ThumbnailItem *item = new ThumbnailItem(this, mainItem, index, tw);
             item->setPos(x, y);
-            if (column == m_imagesPerRow - 1) {
-                x = 0.0;
-                y += tw;
-                column = 0;
-                ++row;
-            } else {
-                x += tw;
-                ++column;
-            }
+            item->setDetailedFileList(m_detailedFileList);
+            item->nextThumbnailPosition(column, row, x, y, tw);
         }
     }
 
@@ -240,21 +225,14 @@ void FileSystemView::modelArrange()
     int column = 0;
     Q_FOREACH(QGraphicsItem *mainItem, childItems()) {
         Q_FOREACH(QGraphicsItem *item, mainItem->childItems()) {
-            if (!dynamic_cast<ThumbnailItem*>(item)) {
-                y += item->boundingRect().height();
-                continue;
-            }
-            item->setPos(x, y);
-            //qreal scale = thumbnailItem->boundingRect().width() / tw;
-            //thumbnailItem->setScale(scale);
-            if (column == m_imagesPerRow - 1) {
-                x = 0.0;
-                y += tw;
-                column = 0;
-                ++row;
+            if (ThumbnailItem *thumbnailItem = dynamic_cast<ThumbnailItem*>(item)) {
+                thumbnailItem->setPos(x, y);
+                thumbnailItem->setDetailedFileList(m_detailedFileList);
+                thumbnailItem->nextThumbnailPosition(column, row, x, y, tw);
             } else {
-                x += tw;
-                ++column;
+                if (DirectoryItem *directoryItem = dynamic_cast<DirectoryItem*>(item))
+                    directoryItem->updateView();
+                y += item->boundingRect().height();
             }
         }
     }

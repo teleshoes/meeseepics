@@ -5,6 +5,8 @@ FileSystemProxyModel::FileSystemProxyModel(FileSystemModel *model)
     : QSortFilterProxyModel(model)
     , m_model(model)
 {
+    qRegisterMetaType<FileSystemProxyModel*>("FileSystemProxyModel");
+
     setFilterCaseSensitivity(Qt::CaseInsensitive);
     setFilterKeyColumn(0);
     setSortCaseSensitivity(Qt::CaseInsensitive);

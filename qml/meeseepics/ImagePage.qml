@@ -5,6 +5,8 @@ import ImageView 1.0
 Page {
     id: imagePage
 
+    property variant imageView: imageViewItem
+
     Rectangle {
         id: backgroundColor
         anchors.fill: parent
@@ -12,7 +14,7 @@ Page {
     }
 
     ImageViewItem {
-        id: imageView
+        id: imageViewItem
         anchors.fill: parent
         onCloseImage: appWindow.showMain()
 
@@ -28,4 +30,7 @@ Page {
         imageView.loadImage(index)
     }
 
+    function startSlideShow(random, loop, interval) {
+        imageView.startSlideShow(random, loop, interval)
+    }
 }

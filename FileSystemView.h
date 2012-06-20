@@ -15,6 +15,9 @@ class FileSystemView : public QDeclarativeItem
 {
     Q_OBJECT
 
+    Q_PROPERTY(FileSystemModel* model READ model)
+    Q_PROPERTY(FileSystemProxyModel* proxyModel READ proxyModel)
+
     Q_PROPERTY(QColor folderNameFontColor READ folderNameFontColor WRITE setFolderNameFontColor)
     Q_PROPERTY(QFont folderNameFont READ folderNameFont WRITE setFolderNameFont)
 
@@ -25,8 +28,13 @@ class FileSystemView : public QDeclarativeItem
     Q_PROPERTY(int thumbnailThreadCount READ thumbnailThreadCount WRITE setThumbnailThreadCount)
     Q_PROPERTY(int imageThreadCount READ imageThreadCount WRITE setImageThreadCount)
 
+    Q_PROPERTY(bool detailedFileList READ detailedFileList WRITE setDetailedFileList)
+
 public:
     explicit FileSystemView(QDeclarativeItem *parent = 0);
+
+    FileSystemModel *model() const { return m_model; }
+    FileSystemProxyModel *proxyModel() const { return m_proxyModel; }
 
     QColor folderNameFontColor() const;
     void setFolderNameFontColor(const QColor &color);
@@ -49,9 +57,15 @@ public:
     int imageThreadCount() const;
     void setImageThreadCount(int count);
 
+    bool detailedFileList() const;
+    void setDetailedFileList(bool enabled);
+
     virtual void componentComplete();
 
 public slots:
+    void modelReset();
+    void modelArrange();
+
     void setDirectory(const QString &path);
 
 signals:
@@ -60,9 +74,6 @@ signals:
     void rootPathChanged(const QString &path);
 
 private slots:
-    void modelReset();
-    void modelArrange();
-
     bool emitShowImage(const QString &path);
     bool emitShowImage(const QModelIndex &index);
 
@@ -82,6 +93,7 @@ private:
     QColor m_folderNameFontColor, m_folderDetailsFontColor;
     QFont m_folderNameFont, m_folderDetailsFont;
     int m_imagesPerRow;
+    bool m_detailedFileList;
 };
 
 #endif // FILESYSTEMVIEW_H

@@ -36,7 +36,9 @@ SOURCES += main.cpp \
     DirectoryItem.cpp \
     ImageView.cpp \
     FileSystemProxyModel.cpp \
-    ImageItem.cpp
+    ImageItem.cpp \
+    Settings.cpp \
+    ThumbnailItem.cpp
 
 # Please do not modify the following two lines. Required for deployment.
 include(qmlapplicationviewer/qmlapplicationviewer.pri)
@@ -57,4 +59,6 @@ HEADERS += \
     DirectoryItem.h \
     ImageView.h \
     FileSystemProxyModel.h \
-    ImageItem.h
+    ImageItem.h \
+    Settings.h \
+    ThumbnailItem.h

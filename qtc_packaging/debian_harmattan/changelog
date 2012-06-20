@@ -1,3 +1,12 @@
+meeseepics (1.0.4) unstable; urgency=low
+
+  * Add slide-show mode.
+  * Add option to switch between light or dark theme.
+  * Add option to display more detailed infos for image files.
+  * Add option to change size of thumbnails.
+
+ -- Sebastian Sauer <sebastian.sauer@kdab.com>  Thu, 26 Jun 2012 20:25:42 +0200
+
 meeseepics (1.0.3) unstable; urgency=low
 
   * Fix cases where switching between zoom-to-fit and double-zoom did not work as expected.

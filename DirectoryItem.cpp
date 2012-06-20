@@ -8,6 +8,7 @@
 
 DirectoryItem::DirectoryItem(FileSystemView *view, QGraphicsItem *parent, const QModelIndex &index, const QString &name)
     : QGraphicsItemGroup(parent)
+    , m_view(view)
 {
     setFlag(QGraphicsItem::ItemIsSelectable, true);
     //setFlag(QGraphicsItem::ItemIsFocusable, true);
@@ -15,16 +16,11 @@ DirectoryItem::DirectoryItem(FileSystemView *view, QGraphicsItem *parent, const 
     m_path = view->m_model->data(index, FileSystemModel::FilePathRole).toString();
     QString modified = view->m_model->data(index, FileSystemModel::FileModifiedRole).toDateTime().toString("yyyy-MM-dd hh:mm:ss");
 
-    QGraphicsTextItem *nameText = new QGraphicsTextItem(name, this);
-    nameText->setDefaultTextColor(view->folderNameFontColor());
-    nameText->setFont(view->folderNameFont());
-    addToGroup(nameText);
-
-    QGraphicsTextItem *detailsText = new QGraphicsTextItem(modified, this);
-    detailsText->setDefaultTextColor(view->folderDetailsFontColor());
-    detailsText->setPos(nameText->pos().x(), nameText->boundingRect().bottom() - 8);
-    detailsText->setFont(view->folderDetailsFont());
-    addToGroup(detailsText);
+    m_nameText = new QGraphicsTextItem(name, this);
+    m_detailsText = new QGraphicsTextItem(modified, this);
+    updateView();
+    addToGroup(m_nameText);
+    addToGroup(m_detailsText);
 }
 
 QRectF DirectoryItem::boundingRect() const
@@ -34,6 +30,16 @@ QRectF DirectoryItem::boundingRect() const
     FileSystemView *view = static_cast<FileSystemView*>(parentItem()->parentItem());
     r.setWidth(view->width());
     return r;
+}
+
+void DirectoryItem::updateView()
+{
+    m_nameText->setDefaultTextColor(m_view->folderNameFontColor());
+    m_nameText->setFont(m_view->folderNameFont());
+
+    m_detailsText->setDefaultTextColor(m_view->folderDetailsFontColor());
+    m_detailsText->setFont(m_view->folderDetailsFont());
+    m_detailsText->setPos(m_nameText->pos().x(), m_nameText->boundingRect().bottom() - 8);
 }
 
 void DirectoryItem::mouseReleaseEvent(QGraphicsSceneMouseEvent *event)

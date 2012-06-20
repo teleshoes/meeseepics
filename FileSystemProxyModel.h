@@ -18,4 +18,6 @@ private:
     FileSystemModel *m_model;
 };
 
+Q_DECLARE_METATYPE(FileSystemProxyModel*)
+
 #endif // FILESYSTEMPROXYMODEL_H

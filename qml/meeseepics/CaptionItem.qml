@@ -8,56 +8,32 @@ Rectangle {
         left: parent.left
         right: parent.right
     }
+    //height: Math.max(captionColumn.height, backgroundImage.height)
     height: captionColumn.height
-    color: '#000033'
 
-    property string captionText: ''
+    property variant captionColumn: cptncolumn
+    property variant buttonRow: btnrow
+
+    //color: theme.inverted ? '#000033' : '#cccccc'
+    Image {
+        id: backgroundImage
+        anchors {
+            left: parent.left
+            right: parent.right
+            top: parent.top
+        }
+        height: captionItem.height
+        source: "image://theme/meegotouch-toolbar-" + (appWindow.inPortrait ? "portrait" : "landscape") + (theme.inverted ? "-inverted" : "") + "-background"
+    }
 
     Column {
-        id: captionColumn
+        id: cptncolumn
         x: 0
         width: parent.width
-        height: captionLabel.height + 12
+        //height: captionLabel.height + 12
         Row {
-            id: buttonRow
-            anchors {
-                left: captionColumn.left
-                right: captionColumn.right
-                verticalCenter: captionColumn.verticalCenter
-            }
-
-            Label {
-                id: captionLabel
-                width: parent.width
-                //width: parent.width - toolsButton.width
-                //height: toolsButton.height
-                anchors.verticalCenter: parent.verticalCenter
-                color: '#ccccff'
-                font.weight: Font.Normal
-                elide: Text.ElideLeft
-                verticalAlignment: Text.AlignVCenter
-                text: captionText
-            }
-
-            /*
-            Button {
-                id: toolsButton
-                anchors.verticalCenter: parent.verticalCenter
-                width: height * 1.3
-                checkable: true
-                iconSource: "image://theme/icon-m-toolbar-tools" + (theme.inverted ? "-white" : "")
-                onClicked: {
-                    if (checked) {
-                        var p = loadFile("ToolsPage.qml")
-                        if (p !== null) {
-                            appWindow.pageStack.push(p);
-                        }
-                    } else {
-                        appWindow.showEditorPage();
-                    }
-                }
-            }
-            */
+            id: btnrow
+            width: parent.width
         }
     }
 

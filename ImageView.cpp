@@ -9,6 +9,57 @@
 #include <QEvent>
 #include <QTouchEvent>
 #include <QGraphicsSceneMouseEvent>
+#include <QTime>
+#include <QTimer>
+
+class ImageView::SlideShow
+{
+public:
+    QTimer m_slideShowTimer;
+    bool m_slideShowRandom;
+    bool m_slideShowLoop;
+    QStringList m_slideShowPaths;
+
+    explicit SlideShow()
+        : m_slideShowRandom(true)
+        , m_slideShowLoop(true)
+    {
+        qsrand(QTime::currentTime().msec());
+        m_slideShowTimer.setInterval(5000);
+    }
+
+    void stop() {
+        qDebug() << "SlideShow::stop";
+        m_slideShowTimer.stop();
+        m_slideShowPaths.clear();
+    }
+
+    void pause() {
+        qDebug() << "SlideShow::pause";
+        m_slideShowTimer.stop();
+    }
+
+    void start(int interval = -1) {
+        qDebug() << "SlideShow::start interval=" << interval << "slideShowTimerInterval=" << m_slideShowTimer.interval();
+        if (interval >= 0)
+            m_slideShowTimer.setInterval(interval);
+        m_slideShowTimer.start();
+    }
+
+    QString nextPath() {
+        if (m_slideShowPaths.isEmpty()) {
+            qDebug() << "SlideShow::nextPath empty";
+            return QString();
+        }
+        int pos = 0;
+        if (m_slideShowRandom) {
+            pos = qrand() % m_slideShowPaths.count();
+        }
+        QString path = m_slideShowPaths.takeAt(pos);
+        qDebug() << "SlideShow::nextPath pos=" << pos << "count=" << m_slideShowPaths.count() << "path=" << path;
+        return path;
+    }
+};
 
 class ImageViewItem : public ImageItem
 {
@@ -51,6 +102,7 @@ ImageView::ImageView(QDeclarativeItem *parent)
     , m_proxyModel(0)
     , m_borderSize(35)
     , m_borderMousePress(NoBorder)
+    , m_slideShow(new ImageView::SlideShow())
 {
     setAcceptTouchEvents(true);
     setAcceptedMouseButtons(Qt::LeftButton | Qt::RightButton | Qt::MiddleButton);
@@ -58,13 +110,19 @@ ImageView::ImageView(QDeclarativeItem *parent)
     setFlag(QGraphicsItem::ItemClipsToShape, true);
     setFlag(QGraphicsItem::ItemClipsChildrenToShape, true);
     setFlag(QGraphicsItem::ItemSendsGeometryChanges, true);
+
     m_imageItem->setTransformationMode(Qt::SmoothTransformation);
     m_imageItem->setFlag(QGraphicsItem::ItemIgnoresParentOpacity, true);
     connect(m_imageItem, SIGNAL(imageLoaded()), this, SLOT(imageLoaded()));
+
+    connect(&m_slideShow->m_slideShowTimer, SIGNAL(timeout()), this, SLOT(slideShowTimeout()));
 }
 
 ImageView::~ImageView()
 {
+    delete m_slideShow;
+    m_slideShow = 0;
+
     qDeleteAll(m_imageCache);
 }
 
@@ -82,6 +140,16 @@ qreal ImageView::borderSize() const
 void ImageView::setBorderSize(qreal size)
 {
     m_borderSize = size;
+}
+
+void ImageView::setModel(FileSystemProxyModel *proxyModel)
+{
+    m_path.clear();
+
+    m_proxyModel = proxyModel;
+    FileSystemModel* model = dynamic_cast<FileSystemModel*>(m_proxyModel ? m_proxyModel->sourceModel() : 0);
+    Q_ASSERT(m_proxyModel);
+    Q_ASSERT(model);
 }
 
 bool ImageView::loadImage(const QModelIndex &index)
@@ -155,8 +223,11 @@ void ImageView::imageLoaded()
 bool ImageView::previousImage()
 {
     qDebug() << "ImageView::previousImage";
+    Q_ASSERT(m_proxyModel);
     QModelIndex index = pathIndex();
     Q_ASSERT(index.isValid());
+    if (!m_proxyModel || !index.isValid())
+        return false;
     int r = index.row();
     index = m_proxyModel->index(r - 1, 0, index.parent());
     if (!index.isValid())
@@ -167,8 +238,11 @@ bool ImageView::previousImage()
 bool ImageView::nextImage()
 {
     qDebug() << "ImageView::nextImage";
+    Q_ASSERT(m_proxyModel);
     QModelIndex index = pathIndex();
     Q_ASSERT(index.isValid());
+    if (!m_proxyModel || !index.isValid())
+        return false;
     int r = index.row();
     index = m_proxyModel->index(r + 1, 0, index.parent());
     if (!index.isValid())
@@ -218,6 +292,115 @@ void ImageView::zoomToCenter(qreal factor)
     qreal x = (s.width() - r.width()) / 2;
     qreal y = (s.height() - r.height()) / 2;
     m_imageItem->setPos(x, y);
+}
+
+void ImageView::startSlideShow(bool random, bool loop, int interval)
+{
+    m_slideShow->stop();
+
+    Q_ASSERT(m_proxyModel);
+    FileSystemModel *model = m_proxyModel ? dynamic_cast<FileSystemModel*>(m_proxyModel->sourceModel()) : 0;
+    Q_ASSERT(model);
+    if (!model)
+        return;
+
+    bool instantly = false;
+
+    if (m_path.isEmpty()) {
+        QModelIndex dirIndex = m_proxyModel->mapFromSource(model->directoryIndex());
+        if (!dirIndex.isValid()) {
+            qDebug()<<"ImageView::startSlideShow Invalid directory="<<model->directory();
+            return;
+        }
+        int count = m_proxyModel->rowCount(dirIndex);
+        for(int r = 0; r < count; ++r) {
+            QModelIndex index = m_proxyModel->index(r, 0, dirIndex);
+            if (!index.isValid() || m_proxyModel->data(index, FileSystemModel::FileIsDirRole).toBool())
+                continue;
+            m_path = m_proxyModel->data(index, FileSystemModel::FilePathRole).toString();
+            if (!m_path.isEmpty())
+                break;
+        }
+        if (m_path.isEmpty()) {
+            qDebug()<<"ImageView::startSlideShow No files in directory="<<model->directory();
+            return;
+        }
+        instantly = true;
+    }
+
+    QModelIndex parent = m_proxyModel->parent(pathIndex());
+    int count = m_proxyModel->rowCount(parent);
+    qDebug()<<"0........ count="<<count<<m_proxyModel->data(parent, FileSystemModel::FilePathRole).toString()<<"m_path="<<m_path;
+    for(int r = 0; r < count; ++r) {
+        QModelIndex index = m_proxyModel->index(r, 0, parent);
+
+        bool isDir = m_proxyModel->data(index, FileSystemModel::FileIsDirRole).toBool();
+        if (isDir) {
+            continue;
+        }
+
+        QString path = m_proxyModel->data(index, FileSystemModel::FilePathRole).toString();
+        if (!path.isEmpty())
+            m_slideShow->m_slideShowPaths.append(path);
+    }
+
+    m_slideShow->m_slideShowRandom = random;
+    m_slideShow->m_slideShowLoop = loop;
+    m_slideShow->m_slideShowTimer.setInterval(interval);
+
+    qDebug() << "ImageView::startSlideShow random=" << random << "loop=" << loop << "interval=" << interval << "pathCount=" << m_slideShow->m_slideShowPaths.count();
+
+    connect(this, SIGNAL(closeImage()), this, SLOT(stopSlideShow()));
+
+    if (instantly)
+        slideShowTimeout();
+    else
+        m_slideShow->start();
+}
+
+void ImageView::stopSlideShow()
+{
+    disconnect(this, SIGNAL(closeImage()), this, SLOT(stopSlideShow()));
+
+    m_slideShow->stop();
+}
+
+void ImageView::slideShowTimeout()
+{
+    qDebug() << "ImageView::slideShowTimeout";
+    m_slideShow->pause();
+    do {
+        QString path = m_slideShow->nextPath();
+        if (path.isNull()) {
+            if (m_slideShow->m_slideShowLoop) {
+                qDebug() << "ImageView::slideShowTimeout finished. Restarting...";
+                startSlideShow(m_slideShow->m_slideShowRandom, m_slideShow->m_slideShowLoop, m_slideShow->m_slideShowTimer.interval());
+            } else {
+                qDebug() << "ImageView::slideShowTimeout finished";
+            }
+            return; // everything done.
+        }
+
+        Q_ASSERT(m_proxyModel);
+        FileSystemModel *model = m_proxyModel ? dynamic_cast<FileSystemModel*>(m_proxyModel->sourceModel()) : 0;
+        Q_ASSERT(model);
+        if (model) {
+            QModelIndex index = model->directoryIndex(path);
+            Q_ASSERT(index.isValid());
+            if (index.isValid()) {
+                QModelIndex proxyIndex = m_proxyModel->mapFromSource(index);
+                Q_ASSERT(proxyIndex.isValid());
+                if (loadImage(proxyIndex)) {
+                    qDebug() << "ImageView::slideShowTimeout loaded image=" << path;
+                    break; // leave while-loop and wait for next timeout
+                } else {
+                    qDebug() << "ImageView::slideShowTimeout Failed loadeding image=" << path;
+                    continue; // try loading next image
+                }
+            }
+        }
+    } while(true);
+    m_slideShow->start();
 }
 
 void ImageView::geometryChanged(const QRectF &newGeometry, const QRectF &oldGeometry)
@@ -343,7 +526,7 @@ QModelIndex ImageView::pathIndex() const
     FileSystemModel* model = dynamic_cast<FileSystemModel*>(m_proxyModel->sourceModel());
     Q_ASSERT(model);
     QModelIndex sourceIndex = model->index(m_path);
-    Q_ASSERT(sourceIndex.isValid());
+    Q_ASSERT_X(sourceIndex.isValid(), __FUNCTION__, qPrintable(QString("Invalid path=%1").arg(m_path)));
     QModelIndex index = m_proxyModel->mapFromSource(sourceIndex);
     Q_ASSERT(index.isValid());
     return index;
