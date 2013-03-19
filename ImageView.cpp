@@ -11,6 +11,7 @@
 #include <QGraphicsSceneMouseEvent>
 #include <QTime>
 #include <QTimer>
+#include <qmdisplaystate.h>
 
 class ImageView::SlideShow
 {
@@ -19,6 +20,7 @@ public:
     bool m_slideShowRandom;
     bool m_slideShowLoop;
     QStringList m_slideShowPaths;
+    MeeGo::QmDisplayState m_displayState;
 
     explicit SlideShow()
         : m_slideShowRandom(true)
@@ -32,6 +34,7 @@ public:
         qDebug() << "SlideShow::stop";
         m_slideShowTimer.stop();
         m_slideShowPaths.clear();
+        m_displayState.cancelBlankingPause();
     }
 
     void pause() {
@@ -44,6 +47,7 @@ public:
         if (interval >= 0)
             m_slideShowTimer.setInterval(interval);
         m_slideShowTimer.start();
+        m_displayState.setBlankingPause();
     }
 
     QString nextPath() {
