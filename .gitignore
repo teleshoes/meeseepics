@@ -1,0 +1,5 @@
+/build/
+/meeseepics_*.dsc
+/meeseepics_*.tar.gz
+/meeseepics_*_armel.changes
+/meeseepics_*_armel.deb
