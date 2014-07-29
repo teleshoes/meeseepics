@@ -20,7 +20,7 @@
 #include <qplatformdefs.h> // MEEGO_EDITION_HARMATTAN
 
 #ifdef HARMATTAN_BOOSTER
-#include <MDeclarativeCache>
+#include "mdeclarativecache.h"
 #endif
 
 #if defined(QMLJSDEBUGGER) && QT_VERSION < 0x040800
