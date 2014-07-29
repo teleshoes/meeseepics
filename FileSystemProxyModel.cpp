@@ -11,7 +11,7 @@ FileSystemProxyModel::FileSystemProxyModel(FileSystemModel *model)
     setFilterKeyColumn(0);
     setSortCaseSensitivity(Qt::CaseInsensitive);
     setDynamicSortFilter(true);
-    sort(0, Qt::AscendingOrder);
+    sort(0, Qt::DescendingOrder);
     setSourceModel(m_model);
 }
 
