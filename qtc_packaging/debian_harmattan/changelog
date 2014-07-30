@@ -1,3 +1,10 @@
+meeseepics (1.0.6) unstable; urgency=low
+
+  * Reverse directory sort order
+  * Do not use invoker to launch
+
+ -- Elliot Wolk <elliot.wolk@gmail.com>  Tue, 29 Jul 2014 16:12:07 -0500
+
 meeseepics (1.0.5) unstable; urgency=low
 
   * Add option to change sort order of file list.
