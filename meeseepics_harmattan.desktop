@@ -4,7 +4,7 @@ Version=1.0
 Type=Application
 Terminal=false
 Name=MeeSeePics
-Exec=/usr/bin/invoker --type=d -s /opt/meeseepics/bin/meeseepics %U
+Exec=/opt/meeseepics/bin/meeseepics
 Icon=/usr/share/icons/hicolor/80x80/apps/meeseepics80.png
 X-Window-Icon=
 X-HildonDesk-ShowInToolbar=true
