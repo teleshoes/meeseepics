@@ -1,3 +1,9 @@
+meeseepics (1.0.7) unstable; urgency=low
+
+  * Fix cmdline argument parsing to set directory/image
+
+ -- Elliot Wolk <elliot.wolk@gmail.com>  Fri, 27 Nov 2015 15:04:29 -0500
+
 meeseepics (1.0.6) unstable; urgency=low
 
   * Reverse directory sort order
