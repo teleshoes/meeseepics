@@ -67,6 +67,7 @@ public slots:
     void modelArrange();
 
     void setDirectory(const QString &path);
+    void revealSavedImage();
 
 signals:
     void showImage(const QModelIndex &index);
@@ -94,6 +95,7 @@ private:
     QFont m_folderNameFont, m_folderDetailsFont;
     int m_imagesPerRow;
     bool m_detailedFileList;
+    QString savedImageFile;
 };
 
 #endif // FILESYSTEMVIEW_H

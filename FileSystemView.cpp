@@ -9,6 +9,7 @@
 #include <QFont>
 #include <QImageReader>
 #include <QApplication>
+#include <QTimer>
 
 FileSystemView::FileSystemView(QDeclarativeItem *parent)
     : QDeclarativeItem(parent)
@@ -52,7 +53,8 @@ void FileSystemView::componentComplete()
 
     m_model->setDirectory(dir);
     if (!file.isEmpty()) {
-        emitShowImage(file);
+        savedImageFile = file;
+        QTimer::singleShot(100, this, SLOT(revealSavedImage()));
     }
 }
 
@@ -153,6 +155,13 @@ void FileSystemView::setDetailedFileList(bool enabled)
 void FileSystemView::setDirectory(const QString &path)
 {
     m_model->setDirectory(path);
+}
+
+void FileSystemView::revealSavedImage()
+{
+    if (!savedImageFile.isEmpty()) {
+        emitShowImage(savedImageFile);
+    }
 }
 
 void FileSystemView::modelReset()
