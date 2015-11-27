@@ -38,16 +38,14 @@ void FileSystemView::componentComplete()
         for(int i = 1; i < QApplication::arguments().count(); ++i) {
             QString arg = QApplication::arguments().at(i);
             QFileInfo fi(arg);
-            if (fi.exists()) {
-                dir = fi.absolutePath();
-                file = fi.absoluteFilePath();
+            QDir d(arg);
+            if (d.exists()) {
+                dir = "" + d.absolutePath();
                 break;
-            } else {
-                QDir d(arg);
-                if (d.exists()) {
-                    dir = d.absolutePath();
-                    break;
-                }
+            }else if (fi.exists()) {
+                dir = "" + fi.absolutePath();
+                file = "" + fi.absoluteFilePath();
+                break;
             }
         }
     }
